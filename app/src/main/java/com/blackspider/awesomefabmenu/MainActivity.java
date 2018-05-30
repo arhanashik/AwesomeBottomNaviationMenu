@@ -4,37 +4,47 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.ActionBar;
+import android.os.CountDownTimer;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.Gravity;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.ViewAnimationUtils;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AnticipateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.ashokvarma.bottomnavigation.BottomNavigationBar;
+import com.ashokvarma.bottomnavigation.BottomNavigationItem;
+import com.ashokvarma.bottomnavigation.ShapeBadgeItem;
+import com.ashokvarma.bottomnavigation.TextBadgeItem;
 import com.blackspider.util.helper.AnimatorUtils;
 import com.blackspider.util.lib.archlayout.ArcLayout;
 import com.blackspider.util.widget.ClipRevealFrame;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, BottomNavigationBar.OnTabSelectedListener{
 
-    private static final String KEY_DEMO = "demo";
+    BottomNavigationBar bottomNavigationBar;
+    @Nullable
+    TextBadgeItem numberBadgeItem;
+    @Nullable
+    ShapeBadgeItem shapeBadgeItem;
+    int lastSelectedPosition = 0;
+
     Toast toast = null;
-    FloatingActionButton fab;
+    ImageView fab;
     Button btnShoutout, btnAsk, btnPoll;
     View rootLayout;
     ClipRevealFrame menuLayout;
@@ -47,27 +57,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        bottomNavigationBar = findViewById(R.id.bottom_navigation_bar);
         fab = findViewById(R.id.fab);
         btnShoutout = findViewById(R.id.btn_shoutout);
         btnAsk = findViewById(R.id.btn_ask);
         btnPoll = findViewById(R.id.btn_poll);
         menuLayout = findViewById(R.id.menu_layout);
         rootLayout = findViewById(R.id.root_layout);
-        arcLayout = (ArcLayout) findViewById(R.id.arc_layout);
+        arcLayout = findViewById(R.id.arc_layout);
 
         btnShoutout.setOnClickListener(this);
         btnAsk.setOnClickListener(this);
         btnPoll.setOnClickListener(this);
         fab.setOnClickListener(this);
-    }
+        bottomNavigationBar.setTabSelectedListener(this);
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            finish();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+        refresh();
+
+        loadGifIconWithInterval();
     }
 
     @Override
@@ -89,6 +96,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 showToast("Create poll");
                 return;
         }
+    }
+
+    @Override
+    public void onTabSelected(int position) {
+        lastSelectedPosition = position;
+        refresh();
+    }
+
+    @Override
+    public void onTabUnselected(int position) {
+
+    }
+
+    @Override
+    public void onTabReselected(int position) {
 
     }
 
@@ -118,7 +140,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         v.setSelected(!v.isSelected());
     }
 
-    @SuppressWarnings("NewApi")
     private void showMenu(int cx, int cy, float startRadius, float endRadius) {
         menuLayout.setVisibility(View.VISIBLE);
 
@@ -134,13 +155,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         AnimatorSet animSet = new AnimatorSet();
-        animSet.setDuration(800);
+        animSet.setDuration(1000);
         animSet.setInterpolator(new OvershootInterpolator());
         animSet.playTogether(animList);
         animSet.start();
     }
 
-    @SuppressWarnings("NewApi")
     private void hideMenu(int cx, int cy, float startRadius, float endRadius) {
 
         List<Animator> animList = new ArrayList<>();
@@ -163,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         animList.add(revealAnim);
 
         AnimatorSet animSet = new AnimatorSet();
-        animSet.setDuration(800);
+        animSet.setDuration(600);
         animSet.setInterpolator(new AnticipateInterpolator());
         animSet.playTogether(animList);
         animSet.addListener(new AnimatorListenerAdapter() {
@@ -174,7 +194,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         animSet.start();
-
     }
 
     private Animator createShowItemAnimator(View item) {
@@ -251,5 +270,77 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             });
         }
         return reveal;
+    }
+
+    private void refresh() {
+
+        bottomNavigationBar.clearAll();
+
+        numberBadgeItem = new TextBadgeItem()
+                .setBorderWidth(4)
+                .setBackgroundColorResource(R.color.blue)
+                .setText("" + lastSelectedPosition)
+                .setHideOnSelect(false);
+
+        shapeBadgeItem = new ShapeBadgeItem()
+                .setShape(ShapeBadgeItem.SHAPE_HEART)
+                .setShapeColorResource(R.color.teal)
+                .setGravity(Gravity.TOP | Gravity.END)
+                .setHideOnSelect(false);
+
+        bottomNavigationBar.setMode(BottomNavigationBar.MODE_FIXED_NO_TITLE);
+        bottomNavigationBar.setBackgroundStyle(BottomNavigationBar.BACKGROUND_STYLE_STATIC);
+
+
+        bottomNavigationBar
+                .addItem(new BottomNavigationItem(R.drawable.ic_home2, "").setActiveColorResource(R.color.orange))
+                .addItem(new BottomNavigationItem(R.drawable.ic_notification, "").setActiveColorResource(R.color.teal).setBadgeItem(numberBadgeItem))
+                .addItem(new BottomNavigationItem(R.drawable.ic_circle, "").setActiveColorResource(R.color.invisible))
+                .addItem(new BottomNavigationItem(R.drawable.ic_account, "").setActiveColorResource(R.color.blue).setBadgeItem(shapeBadgeItem))
+                .addItem(new BottomNavigationItem(R.drawable.ic_friends, "").setActiveColorResource(R.color.primary))
+                .setFirstSelectedPosition(lastSelectedPosition)
+                .initialise();
+    }
+
+    private void loadGifIconWithInterval(){
+        new CountDownTimer(60000, 500) {
+            int count = 0, animBreak = 5000;
+            boolean animated = false;
+
+            public void onTick(long millisUntilFinished) {
+                count+=500;
+                final RequestOptions requestOptions;
+                if(count>animBreak && (count%animBreak==0)){
+                    requestOptions = new RequestOptions()
+                            .skipMemoryCache(true)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE);
+                    animated = true;
+                    show(fab, requestOptions);
+                }
+                else {
+                    requestOptions = new RequestOptions()
+                            .skipMemoryCache(true)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .dontAnimate();
+
+                    if(animated){
+                        animated = false;
+                        show(fab, requestOptions);
+                    }
+                }
+            }
+
+            public void onFinish() {
+                loadGifIconWithInterval();
+            }
+
+        }.start();
+    }
+
+    void show(final ImageView view, RequestOptions requestOptions){
+        Glide.with(MainActivity.this)
+                .load(R.drawable.ic_curios)
+                .apply(requestOptions)
+                .into(view);
     }
 }

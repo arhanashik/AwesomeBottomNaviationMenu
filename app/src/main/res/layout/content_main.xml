@@ -31,7 +31,7 @@
             android:id="@+id/arc_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginBottom="32dp"
+            android:layout_marginBottom="64dp"
             app:arc_axisRadius="@dimen/layout_child_offset_path"
             app:arc_freeAngle="true"
             app:arc_origin="bottom"
@@ -85,7 +85,7 @@
                 <Button
                     android:id="@+id/btn_poll"
                     style="@style/Item.Small"
-                    android:background="@drawable/ic_poll" />
+                    android:background="@drawable/ic_poll"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -97,4 +97,10 @@
         </com.blackspider.util.lib.archlayout.ArcLayout>
 
     </com.blackspider.util.widget.ClipRevealFrame>
+
+    <com.ashokvarma.bottomnavigation.BottomNavigationBar
+        android:id="@+id/bottom_navigation_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true" />
 </RelativeLayout>
