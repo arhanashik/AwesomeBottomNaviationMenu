@@ -8,6 +8,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.annotation.Nullable;
+import android.support.v4.view.ViewCompat;
+import android.support.v4.view.ViewPropertyAnimatorListener;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
@@ -49,6 +51,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     View rootLayout;
     ClipRevealFrame menuLayout;
     ArcLayout arcLayout;
+
+
+    boolean isMenuOpen = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,6 +146,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void showMenu(int cx, int cy, float startRadius, float endRadius) {
+        rotateFabForward();
+
         menuLayout.setVisibility(View.VISIBLE);
 
         List<Animator> animList = new ArrayList<>();
@@ -162,6 +169,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void hideMenu(int cx, int cy, float startRadius, float endRadius) {
+        rotateFabBackward();
 
         List<Animator> animList = new ArrayList<>();
 
@@ -238,6 +246,63 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return anim;
     }
 
+    public void rotateFabForward() {
+        ViewCompat.animate(fab)
+                .rotation(180.0F)
+                .withLayer()
+                .setDuration(1000)
+                .setInterpolator(new OvershootInterpolator(5.0F))
+                .setListener(new ViewPropertyAnimatorListener() {
+                    @Override
+                    public void onAnimationStart(View view) {
+                        isMenuOpen = true;
+                        RequestOptions requestOptions = new RequestOptions()
+                                .skipMemoryCache(true)
+                                .diskCacheStrategy(DiskCacheStrategy.NONE);
+                        show(fab, requestOptions, R.drawable.ic_close);
+                    }
+
+                    @Override
+                    public void onAnimationEnd(View view) {
+                    }
+
+                    @Override
+                    public void onAnimationCancel(View view) {
+
+                    }
+                })
+                .start();
+    }
+
+    public void rotateFabBackward() {
+        ViewCompat.animate(fab)
+                .rotation(0.0F)
+                .withLayer()
+                .setDuration(600)
+                .setInterpolator(new OvershootInterpolator(5.0F))
+                .setListener(new ViewPropertyAnimatorListener() {
+                    @Override
+                    public void onAnimationStart(View view) {
+                        RequestOptions requestOptions = new RequestOptions()
+                                .dontAnimate()
+                                .skipMemoryCache(true)
+                                .diskCacheStrategy(DiskCacheStrategy.NONE);
+                        show(fab, requestOptions, R.drawable.ic_curios);
+                    }
+
+                    @Override
+                    public void onAnimationEnd(View view) {
+                        isMenuOpen = false;
+                    }
+
+                    @Override
+                    public void onAnimationCancel(View view) {
+
+                    }
+                })
+                .start();
+    }
+
     private Animator createCircularReveal(final ClipRevealFrame view, int x, int y, float startRadius,
                                           float endRadius) {
         final Animator reveal;
@@ -305,27 +370,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void loadGifIconWithInterval(){
         new CountDownTimer(60000, 500) {
             int count = 0, animBreak = 5000;
-            boolean animated = false;
+            boolean fabAnimated = false;
 
             public void onTick(long millisUntilFinished) {
                 count+=500;
-                final RequestOptions requestOptions;
-                if(count>animBreak && (count%animBreak==0)){
-                    requestOptions = new RequestOptions()
-                            .skipMemoryCache(true)
-                            .diskCacheStrategy(DiskCacheStrategy.NONE);
-                    animated = true;
-                    show(fab, requestOptions);
-                }
-                else {
-                    requestOptions = new RequestOptions()
-                            .skipMemoryCache(true)
-                            .diskCacheStrategy(DiskCacheStrategy.NONE)
-                            .dontAnimate();
+                if(!isMenuOpen){
+                    final RequestOptions requestOptions;
+                    if(count>animBreak && (count%animBreak==0)){
+                        requestOptions = new RequestOptions()
+                                .skipMemoryCache(true)
+                                .diskCacheStrategy(DiskCacheStrategy.NONE);
+                        fabAnimated = true;
+                        show(fab, requestOptions, R.drawable.ic_curios);
+                    }
+                    else {
+                        requestOptions = new RequestOptions()
+                                .skipMemoryCache(true)
+                                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                                .dontAnimate();
 
-                    if(animated){
-                        animated = false;
-                        show(fab, requestOptions);
+                        if(fabAnimated){
+                            fabAnimated = false;
+                            show(fab, requestOptions, R.drawable.ic_curios);
+                        }
                     }
                 }
             }
@@ -337,9 +404,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }.start();
     }
 
-    void show(final ImageView view, RequestOptions requestOptions){
+    void show(final ImageView view, RequestOptions requestOptions, int drawable){
         Glide.with(MainActivity.this)
-                .load(R.drawable.ic_curios)
+                .load(drawable)
                 .apply(requestOptions)
                 .into(view);
     }
